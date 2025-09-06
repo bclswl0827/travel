@@ -1,6 +1,6 @@
 module github.com/bclswl0827/travel
 
-go 1.24.6
+go 1.24.0
 
 require github.com/samber/lo v1.51.0
 

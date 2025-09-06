@@ -21,5 +21,5 @@ func main() {
 	), 10, true)
 	data, _ := json.MarshalIndent(res, "", "  ")
 
-	fmt.Println(string(data))
+	fmt.Println(string(data)) // Duration field is in nanoseconds
 }
