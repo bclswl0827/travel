@@ -47,15 +47,14 @@ func NewTravelTimeMap(data string) (TravelTimeMap, error) {
 				return nil, fmt.Errorf("failed to parse second part of duration: %w", err)
 			}
 
-			// filter out entries with zero duration
-			if durationMin == 0 && durationSec == 0 {
-				continue
-			}
-
 			if durationIdx < len(depths) && durationIdx < len(slownessFields) {
 				slowness, err := strconv.ParseFloat(slownessFields[durationIdx], 64)
 				if err != nil {
 					return nil, fmt.Errorf("failed to parse slowness: %w", err)
+				}
+				// filter out entries with zero duration and slowness
+				if durationMin == 0 && durationSec == 0 && slowness == 0 {
+					continue
 				}
 				entries[delta][depths[durationIdx]] = TravelTimeEntry{
 					Depth:    depths[durationIdx],

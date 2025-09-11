@@ -33,10 +33,10 @@ const (
 )
 
 //go:embed data
-var ak135Dir embed.FS
+var ak135Data embed.FS
 
 func GetAK135Table(tableId ak135TableId) string {
-	dataBytes, err := ak135Dir.ReadFile(filepath.Join("data", string(tableId)))
+	dataBytes, err := ak135Data.ReadFile(filepath.Join("data", string(tableId)))
 	if err != nil {
 		return ""
 	}
