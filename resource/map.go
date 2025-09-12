@@ -110,6 +110,9 @@ func (m TravelTimeMap) interpolateDepth(row map[float64]TravelTimeEntry, depth, 
 	}
 	sort.Float64s(depths)
 
+	if len(depths) == 0 {
+		return TravelTimeEntry{}, false
+	}
 	if depth < depths[0] || depth > depths[len(depths)-1] {
 		return TravelTimeEntry{}, false
 	}
