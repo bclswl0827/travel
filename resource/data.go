@@ -2,7 +2,7 @@ package resource
 
 import (
 	"embed"
-	"path/filepath"
+	"path"
 )
 
 type ak135TableId string
@@ -36,7 +36,7 @@ const (
 var ak135Data embed.FS
 
 func GetAK135Table(tableId ak135TableId) string {
-	dataBytes, err := ak135Data.ReadFile(filepath.Join("data", string(tableId)))
+	dataBytes, err := ak135Data.ReadFile(path.Join("data", string(tableId)))
 	if err != nil {
 		return ""
 	}
