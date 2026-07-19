@@ -1,6 +1,6 @@
 # travel
 
-travel is a Go library for estimating seismic-wave travel times from the published AK135 tables used by TauP's AK135 regression tests. It provides a compact, table-driven API for common phases such as P, PcP, PKPab, PKPbc, PKIKP, S, ScP, ScS, SKP, SKS, and SKIKS.
+travel is a Go library for estimating seismic-wave travel times from the published AK135 tables. It provides a compact, table-driven API for common phases such as P, PcP, PKPab, PKPbc, PKIKP, S, ScP, ScS, SKP, SKS, and SKIKS.
 
 ## Features
 
@@ -52,4 +52,8 @@ func main() {
 
 ## License
 
-This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+The original software source code is licensed under Apache-2.0.
+
+The AK135 numerical data under `resource/data` are derived from B. L. N. Kennett's _Seismological Tables: ak135_ and are not claimed to be licensed under Apache-2.0.
+
+See `resource/data/README.md`.
