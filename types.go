@@ -4,10 +4,10 @@ import (
 	"github.com/bclswl0827/travel/resource"
 )
 
-const RADIUS_EARTH_KM = 6371.0008
+const RADIUS_EARTH_KM = 6371.0
 
 type IPhase interface {
 	Name() string
 	Boundary() (minDelta, maxDelta, minDepth, maxDepth float64)
-	Estimate(delta, depth float64, interplate bool) (result resource.TravelTimeEntry, err error)
+	Estimate(delta, depth float64, interpolate bool) (result resource.TravelTimeEntry, err error)
 }

@@ -11,7 +11,7 @@ type PKPdf_Impl struct {
 }
 
 func (p *PKPdf_Impl) Name() string {
-	return "PKPdf"
+	return "PKIKP"
 }
 
 func (p *PKPdf_Impl) Boundary() (minDelta, maxDelta, minDepth, maxDepth float64) {
@@ -34,4 +34,12 @@ func NewPKPdf(pkpdfData string) (*PKPdf_Impl, error) {
 	}
 
 	return &PKPdf_Impl{pkpdfMap: mapObj}, nil
+}
+
+// PKIKP_Impl is TauP's canonical name for the phase labelled PKPdf in the
+// published AK135 tables.
+type PKIKP_Impl = PKPdf_Impl
+
+func NewPKIKP(pkikpData string) (*PKIKP_Impl, error) {
+	return NewPKPdf(pkikpData)
 }

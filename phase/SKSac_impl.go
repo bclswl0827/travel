@@ -11,7 +11,7 @@ type SKSac_Impl struct {
 }
 
 func (p *SKSac_Impl) Name() string {
-	return "SKSac"
+	return "SKS"
 }
 
 func (p *SKSac_Impl) Boundary() (minDelta, maxDelta, minDepth, maxDepth float64) {
@@ -32,6 +32,17 @@ func NewSKSac(sksacData string) (*SKSac_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TauP identifies the published 144-degree values at these depths as
+	// duplicated 143-degree values rather than valid arrivals.
+	removeEntries(mapObj, 144, 500, 700)
 
 	return &SKSac_Impl{sksacMap: mapObj}, nil
+}
+
+// SKS_Impl is TauP's canonical name for the branch labelled SKSac in the
+// published AK135 tables.
+type SKS_Impl = SKSac_Impl
+
+func NewSKS(sksData string) (*SKS_Impl, error) {
+	return NewSKSac(sksData)
 }

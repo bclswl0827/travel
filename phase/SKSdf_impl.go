@@ -11,7 +11,7 @@ type SKSdf_Impl struct {
 }
 
 func (p *SKSdf_Impl) Name() string {
-	return "SKSdf"
+	return "SKIKS"
 }
 
 func (p *SKSdf_Impl) Boundary() (minDelta, maxDelta, minDepth, maxDepth float64) {
@@ -32,6 +32,17 @@ func NewSKSdf(sksdfData string) (*SKSdf_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
+	// TauP's computed SKIKS branch begins just beyond 105 degrees for these
+	// depths, despite the rounded published table containing 105-degree cells.
+	removeEntries(mapObj, 105, 200, 300, 500, 700)
 
 	return &SKSdf_Impl{sksdfMap: mapObj}, nil
+}
+
+// SKIKS_Impl is TauP's canonical name for the phase labelled SKSdf in the
+// published AK135 tables.
+type SKIKS_Impl = SKSdf_Impl
+
+func NewSKIKS(skiksData string) (*SKIKS_Impl, error) {
+	return NewSKSdf(skiksData)
 }

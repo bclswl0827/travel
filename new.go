@@ -12,13 +12,13 @@ type AK135 struct {
 	PcP   IPhase
 	PKPab IPhase
 	PKPbc IPhase
-	PKPdf IPhase
+	PKIKP IPhase
 	S     IPhase
 	ScP   IPhase
 	ScS   IPhase
 	SKP   IPhase
-	SKSac IPhase
-	SKSdf IPhase
+	SKS   IPhase
+	SKIKS IPhase
 }
 
 type Estimation struct {
@@ -26,13 +26,13 @@ type Estimation struct {
 	PcP   *resource.TravelTimeEntry
 	PKPab *resource.TravelTimeEntry
 	PKPbc *resource.TravelTimeEntry
-	PKPdf *resource.TravelTimeEntry
+	PKIKP *resource.TravelTimeEntry
 	S     *resource.TravelTimeEntry
 	ScP   *resource.TravelTimeEntry
 	ScS   *resource.TravelTimeEntry
 	SKP   *resource.TravelTimeEntry
-	SKSac *resource.TravelTimeEntry
-	SKSdf *resource.TravelTimeEntry
+	SKS   *resource.TravelTimeEntry
+	SKIKS *resource.TravelTimeEntry
 }
 
 func NewAK135() (*AK135, error) {
@@ -53,9 +53,9 @@ func NewAK135() (*AK135, error) {
 	if err != nil {
 		return nil, fmt.Errorf("phase.NewPKPbc: %w", err)
 	}
-	PKPdf, err := phase.NewPKPdf(resource.GetAK135Table(resource.AK135_PKPdf))
+	PKIKP, err := phase.NewPKIKP(resource.GetAK135Table(resource.AK135_PKIKP))
 	if err != nil {
-		return nil, fmt.Errorf("phase.NewPKPdf: %w", err)
+		return nil, fmt.Errorf("phase.NewPKIKP: %w", err)
 	}
 	S, err := phase.NewS(resource.GetAK135Table(resource.AK135_S_SHALLOW), resource.GetAK135Table(resource.AK135_S_DEEP))
 	if err != nil {
@@ -73,25 +73,25 @@ func NewAK135() (*AK135, error) {
 	if err != nil {
 		return nil, fmt.Errorf("phase.NewSKP: %w", err)
 	}
-	SKSac, err := phase.NewSKSac(resource.GetAK135Table(resource.AK135_SKSac))
+	SKS, err := phase.NewSKS(resource.GetAK135Table(resource.AK135_SKS))
 	if err != nil {
-		return nil, fmt.Errorf("phase.NewSKSac: %w", err)
+		return nil, fmt.Errorf("phase.NewSKS: %w", err)
 	}
-	SKSdf, err := phase.NewSKSdf(resource.GetAK135Table(resource.AK135_SKSdf))
+	SKIKS, err := phase.NewSKIKS(resource.GetAK135Table(resource.AK135_SKIKS))
 	if err != nil {
-		return nil, fmt.Errorf("phase.NewSKSdf: %w", err)
+		return nil, fmt.Errorf("phase.NewSKIKS: %w", err)
 	}
 	return &AK135{
 		P:     P,
 		PcP:   PcP,
 		PKPab: PKPab,
 		PKPbc: PKPbc,
-		PKPdf: PKPdf,
+		PKIKP: PKIKP,
 		S:     S,
 		ScP:   ScP,
 		ScS:   ScS,
 		SKP:   SKP,
-		SKSac: SKSac,
-		SKSdf: SKSdf,
+		SKS:   SKS,
+		SKIKS: SKIKS,
 	}, nil
 }

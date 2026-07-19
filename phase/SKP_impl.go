@@ -32,6 +32,8 @@ func NewSKP(skpData string) (*SKP_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
+	// These published 110-degree entries are skipped by TauP's AK135 test.
+	removeEntries(mapObj, 110, 300, 500, 700)
 
 	return &SKP_Impl{skpMap: mapObj}, nil
 }

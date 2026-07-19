@@ -24,12 +24,15 @@ const (
 	AK135_PKPab ak135TableId = "ak135_PKPab.txt"
 	AK135_PKPbc ak135TableId = "ak135_PKPbc.txt"
 	AK135_PKPdf ak135TableId = "ak135_PKPdf.txt"
+	AK135_PKIKP              = AK135_PKPdf
 )
 
 const (
 	AK135_SKSac ak135TableId = "ak135_SKSac.txt"
 	AK135_SKSdf ak135TableId = "ak135_SKSdf.txt"
 	AK135_SKP   ak135TableId = "ak135_SKP.txt"
+	AK135_SKS                = AK135_SKSac
+	AK135_SKIKS              = AK135_SKSdf
 )
 
 //go:embed data

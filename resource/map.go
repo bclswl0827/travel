@@ -54,103 +54,144 @@ func (m TravelTimeMap) Query(delta, depth float64, interpolate bool) (TravelTime
 	if len(m) == 0 {
 		return TravelTimeEntry{}, errors.New("empty travel time map")
 	}
+	if math.IsNaN(delta) || math.IsInf(delta, 0) || math.IsNaN(depth) || math.IsInf(depth, 0) {
+		return TravelTimeEntry{}, errors.New("distance and depth must be finite")
+	}
 
-	// return directly if exact hit
+	// Return an exact table value without applying any interpolation.
 	if row, ok := m[delta]; ok {
-		if entry, ok2 := row[depth]; ok2 {
+		if entry, found := row[depth]; found {
 			return entry, nil
 		}
-	} else if !interpolate {
-		return TravelTimeEntry{}, errors.New("interpolation disabled, depth is not found")
+	}
+	if !interpolate {
+		return TravelTimeEntry{}, errors.New("interpolation disabled and exact entry is not found")
 	}
 
-	var deltas []float64
+	deltas := make([]float64, 0, len(m))
+	depthSet := make(map[float64]struct{})
 	for d := range m {
 		deltas = append(deltas, d)
-	}
-	sort.Float64s(deltas)
-
-	if delta < deltas[0] || delta > deltas[len(deltas)-1] {
-		return TravelTimeEntry{}, errors.New("delta out of range")
-	}
-
-	// find the nearest two deltas
-	var d0, d1 float64
-	for i := 0; i < len(deltas)-1; i++ {
-		if delta >= deltas[i] && delta <= deltas[i+1] {
-			d0, d1 = deltas[i], deltas[i+1]
-			break
+		for z := range m[d] {
+			depthSet[z] = struct{}{}
 		}
 	}
-
-	// for d0 and d1, interpolate along the depth dimension
-	entry0, ok0 := m.interpolateDepth(m[d0], depth, d0)
-	entry1, ok1 := m.interpolateDepth(m[d1], depth, d1)
-	if !ok0 || !ok1 {
-		return TravelTimeEntry{}, errors.New("depth out of range")
-	}
-
-	t := (delta - d0) / (d1 - d0)
-	return TravelTimeEntry{
-		Depth:    depth,
-		Delta:    delta,
-		Duration: m.lerpDuration(entry0.Duration, entry1.Duration, t),
-		Slowness: m.lerp(entry0.Slowness, entry1.Slowness, t),
-	}, nil
-}
-
-func (m TravelTimeMap) interpolateDepth(row map[float64]TravelTimeEntry, depth, delta float64) (TravelTimeEntry, bool) {
-	if row == nil {
-		return TravelTimeEntry{}, false
-	}
-
-	var depths []float64
-	for d := range row {
-		depths = append(depths, d)
+	sort.Float64s(deltas)
+	depths := make([]float64, 0, len(depthSet))
+	for z := range depthSet {
+		depths = append(depths, z)
 	}
 	sort.Float64s(depths)
 
-	if len(depths) == 0 {
-		return TravelTimeEntry{}, false
+	d0, d1, ok := bracket(deltas, delta)
+	if !ok {
+		return TravelTimeEntry{}, errors.New("delta out of range")
 	}
-	if depth < depths[0] || depth > depths[len(depths)-1] {
-		return TravelTimeEntry{}, false
-	}
-
-	// exact hit
-	if entry, ok := row[depth]; ok {
-		return entry, true
+	z0, z1, ok := bracket(depths, depth)
+	if !ok {
+		return TravelTimeEntry{}, errors.New("depth out of range")
 	}
 
-	// find the nearest two depths
-	var d0, d1 float64
-	for i := 0; i < len(depths)-1; i++ {
-		if depth >= depths[i] && depth <= depths[i+1] {
-			d0, d1 = depths[i], depths[i+1]
-			break
-		}
+	// Interpolate only between adjacent cells in the original table grid. A
+	// missing corner marks a distance/depth where TauP has no arrival; crossing
+	// it would incorrectly fill a shadow or phase-existence gap.
+	entry0, ok := m.interpolateDistance(d0, d1, z0, delta)
+	if !ok {
+		return TravelTimeEntry{}, errors.New("phase does not exist in interpolation interval")
+	}
+	if z0 == z1 {
+		entry0.Depth = depth
+		entry0.Delta = delta
+		return entry0, nil
+	}
+	entry1, ok := m.interpolateDistance(d0, d1, z1, delta)
+	if !ok {
+		return TravelTimeEntry{}, errors.New("phase does not exist in interpolation interval")
 	}
 
-	e0 := row[d0]
-	e1 := row[d1]
-	t := (depth - d0) / (d1 - d0)
-
+	t := (depth - z0) / (z1 - z0)
 	return TravelTimeEntry{
 		Depth:    depth,
 		Delta:    delta,
-		Duration: m.lerpDuration(e0.Duration, e1.Duration, t),
-		Slowness: m.lerp(e0.Slowness, e1.Slowness, t),
+		Duration: lerpDuration(entry0.Duration, entry1.Duration, t),
+		Slowness: lerp(entry0.Slowness, entry1.Slowness, t),
+	}, nil
+}
+
+func bracket(values []float64, target float64) (lower, upper float64, ok bool) {
+	if len(values) == 0 || target < values[0] || target > values[len(values)-1] {
+		return 0, 0, false
+	}
+	i := sort.SearchFloat64s(values, target)
+	if i < len(values) && values[i] == target {
+		return target, target, true
+	}
+	if i == 0 || i == len(values) {
+		return 0, 0, false
+	}
+	return values[i-1], values[i], true
+}
+
+func (m TravelTimeMap) interpolateDistance(d0, d1, depth, delta float64) (TravelTimeEntry, bool) {
+	e0, ok := m[d0][depth]
+	if !ok {
+		return TravelTimeEntry{}, false
+	}
+	if d0 == d1 {
+		return e0, true
+	}
+	e1, ok := m[d1][depth]
+	if !ok {
+		return TravelTimeEntry{}, false
+	}
+
+	t := (delta - d0) / (d1 - d0)
+	slowness := lerp(e0.Slowness, e1.Slowness, t)
+
+	// TauP linearly interpolates ray parameter, then uses that derivative and
+	// the closest bracketing arrival to interpolate travel time. The table ray
+	// parameter is seconds/degree, so no radian conversion is needed here.
+	var seconds float64
+	if math.Abs(delta-d0) < math.Abs(delta-d1) {
+		seconds = e0.Duration.Seconds() + slowness*(delta-d0)
+	} else {
+		seconds = e1.Duration.Seconds() + slowness*(delta-d1)
+	}
+	return TravelTimeEntry{
+		Depth:    depth,
+		Delta:    delta,
+		Duration: durationFromSeconds(seconds),
+		Slowness: slowness,
 	}, true
 }
 
-func (m TravelTimeMap) lerp(a, b, t float64) float64 {
+func lerp(a, b, t float64) float64 {
 	return a + (b-a)*t
 }
 
-func (m TravelTimeMap) lerpDuration(a, b time.Duration, t float64) time.Duration {
-	af := float64(a)
-	bf := float64(b)
-	return time.Duration(af + (bf-af)*t)
+func lerpDuration(a, b time.Duration, t float64) time.Duration {
+	return time.Duration(math.Round(lerp(float64(a), float64(b), t)))
+}
+
+func durationFromSeconds(seconds float64) time.Duration {
+	return time.Duration(math.Round(seconds * float64(time.Second)))
+}
+
+// MergeTravelTimeMaps combines tables that contain different source-depth
+// ranges for the same phase, such as the shallow and deep AK135 P/S tables.
+func MergeTravelTimeMaps(maps ...TravelTimeMap) TravelTimeMap {
+	merged := make(TravelTimeMap)
+	for _, m := range maps {
+		for delta, row := range m {
+			if merged[delta] == nil {
+				merged[delta] = make(map[float64]TravelTimeEntry)
+			}
+			for depth, entry := range row {
+				merged[delta][depth] = entry
+			}
+		}
+	}
+	return merged
 }
 
 func (ttm TravelTimeMap) PrettyPrint(w io.Writer) {

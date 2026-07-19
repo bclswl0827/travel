@@ -3,41 +3,50 @@ package resource
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/samber/lo"
 )
 
 func NewTravelTimeMap(data string) (TravelTimeMap, error) {
-	lines := strings.Split(data, "\n")
-	if len(lines) < 4 {
+	lines := strings.Split(strings.TrimSpace(data), "\n")
+	if len(lines) < 6 || (len(lines)-4)%2 != 0 {
 		return nil, errors.New("invalid travel time data")
 	}
 
-	depths := lo.Map(strings.Fields(lines[2])[1:], func(line string, _ int) float64 {
-		depth, _ := strconv.ParseFloat(strings.TrimSpace(line), 64)
-		return depth
-	})
+	depthFields := strings.Fields(lines[2])
+	if len(depthFields) < 2 {
+		return nil, errors.New("travel time data has no source depths")
+	}
+	depths := make([]float64, len(depthFields)-1)
+	for i, field := range depthFields[1:] {
+		depth, err := strconv.ParseFloat(field, 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse source depth %q: %w", field, err)
+		}
+		depths[i] = depth
+	}
 
 	entries := make(TravelTimeMap)
 	for lineIdx := 4; lineIdx < len(lines); lineIdx += 2 {
-		if len(lines[lineIdx]) == 0 {
-			continue
-		}
-
 		durationFields := strings.Fields(lines[lineIdx])
 		slownessFields := strings.Fields(lines[lineIdx+1])
-		delta, err := strconv.ParseFloat(durationFields[0], 64)
-		if err != nil {
-			return nil, err
+		if len(slownessFields) > len(depths) {
+			return nil, fmt.Errorf("invalid slowness row at line %d: got %d values, maximum is %d", lineIdx+2, len(slownessFields), len(depths))
+		}
+		if len(durationFields) < 1+2*len(slownessFields) {
+			return nil, fmt.Errorf("invalid travel-time row at line %d: got %d values, want at least %d", lineIdx+1, len(durationFields), 1+2*len(slownessFields))
 		}
 
+		delta, err := strconv.ParseFloat(durationFields[0], 64)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse distance %q: %w", durationFields[0], err)
+		}
 		entries[delta] = make(map[float64]TravelTimeEntry)
 		durationFields = durationFields[1:]
 
-		for durationIdx := 0; durationIdx < len(durationFields)/2; durationIdx++ {
+		for durationIdx := range slownessFields {
 			durationMin, err := strconv.ParseFloat(durationFields[2*durationIdx], 64)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse minute part of duration: %w", err)
@@ -47,21 +56,20 @@ func NewTravelTimeMap(data string) (TravelTimeMap, error) {
 				return nil, fmt.Errorf("failed to parse second part of duration: %w", err)
 			}
 
-			if durationIdx < len(depths) && durationIdx < len(slownessFields) {
-				slowness, err := strconv.ParseFloat(slownessFields[durationIdx], 64)
-				if err != nil {
-					return nil, fmt.Errorf("failed to parse slowness: %w", err)
-				}
-				// filter out entries with zero duration and slowness
-				if durationMin == 0 && durationSec == 0 && slowness == 0 {
-					continue
-				}
-				entries[delta][depths[durationIdx]] = TravelTimeEntry{
-					Depth:    depths[durationIdx],
-					Delta:    delta,
-					Slowness: slowness,
-					Duration: time.Duration((durationMin*60 + durationSec) * float64(time.Second)),
-				}
+			slowness, err := strconv.ParseFloat(slownessFields[durationIdx], 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse slowness: %w", err)
+			}
+			// The published AK135 tables use an all-zero cell to mark a phase
+			// that does not exist at this distance and source depth.
+			if durationMin == 0 && durationSec == 0 && slowness == 0 {
+				continue
+			}
+			entries[delta][depths[durationIdx]] = TravelTimeEntry{
+				Depth:    depths[durationIdx],
+				Delta:    delta,
+				Slowness: slowness,
+				Duration: time.Duration(math.Round((durationMin*60 + durationSec) * float64(time.Second))),
 			}
 		}
 	}
