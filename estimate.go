@@ -30,6 +30,9 @@ func (p *AK135) Estimate(delta, depth float64, interpolate bool) Estimation {
 	if result, err := p.SKP.Estimate(delta, depth, interpolate); err == nil {
 		estimation.SKP = &result
 	}
+	if result, err := p.SKIKP.Estimate(delta, depth, interpolate); err == nil {
+		estimation.SKIKP = &result
+	}
 	if result, err := p.SKS.Estimate(delta, depth, interpolate); err == nil {
 		estimation.SKS = &result
 	}

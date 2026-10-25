@@ -17,6 +17,7 @@ type AK135 struct {
 	ScP   IPhase
 	ScS   IPhase
 	SKP   IPhase
+	SKIKP IPhase
 	SKS   IPhase
 	SKIKS IPhase
 }
@@ -31,6 +32,7 @@ type Estimation struct {
 	ScP   *resource.TravelTimeEntry
 	ScS   *resource.TravelTimeEntry
 	SKP   *resource.TravelTimeEntry
+	SKIKP *resource.TravelTimeEntry
 	SKS   *resource.TravelTimeEntry
 	SKIKS *resource.TravelTimeEntry
 }
@@ -73,6 +75,10 @@ func NewAK135() (*AK135, error) {
 	if err != nil {
 		return nil, fmt.Errorf("phase.NewSKP: %w", err)
 	}
+	SKIKP, err := phase.NewSKIKP(resource.GetAK135Table(resource.AK135_SKIKP))
+	if err != nil {
+		return nil, fmt.Errorf("phase.NewSKIKP: %w", err)
+	}
 	SKS, err := phase.NewSKS(resource.GetAK135Table(resource.AK135_SKS))
 	if err != nil {
 		return nil, fmt.Errorf("phase.NewSKS: %w", err)
@@ -91,6 +97,7 @@ func NewAK135() (*AK135, error) {
 		ScP:   ScP,
 		ScS:   ScS,
 		SKP:   SKP,
+		SKIKP: SKIKP,
 		SKS:   SKS,
 		SKIKS: SKIKS,
 	}, nil

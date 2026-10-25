@@ -1,6 +1,6 @@
 # travel
 
-travel is a Go library for estimating seismic-wave travel times from the published AK135 tables. It provides a compact, table-driven API for common phases such as P, PcP, PKPab, PKPbc, PKIKP, S, ScP, ScS, SKP, SKS, and SKIKS.
+travel is a Go library for estimating seismic-wave travel times from AK135 tables. It provides a compact, table-driven API for P, PcP, PKPab, PKPbc, PKIKP, S, ScP, ScS, SKP, SKIKP, SKS, and SKIKS.
 
 ## Features
 
@@ -45,10 +45,14 @@ func main() {
 ## API notes
 
 - `Estimate(delta, depth, interpolate)` returns a struct containing one result per supported phase.
-- Each phase result is a pointer to a `TravelTimeEntry` when the phase exists for the requested distance and depth; otherwise it is `nil`.
+- Each phase result is a pointer to a `TravelTimeEntry` when the bundled table can estimate it; otherwise it is `nil`.
 - The `Duration` field is a Go `time.Duration` (nanoseconds), and `Slowness` is reported in seconds per degree.
-- Interpolation follows TauP's ray-parameter rule for distance and uses linear interpolation in depth between adjacent published table depths.
-- The package does not trace rays through a velocity model or return multiple arrivals for a single phase; it is intentionally limited to the published AK135 tables.
+- Distance interpolation uses ray parameters; source-depth interpolation is linear between adjacent table depths.
+- P and S represent the first arrivals of `p/P/Pdiff` and `s/S/Sdiff`, respectively. `PKPab` and `PKPbc` select the separate PKP branches.
+- `SKP` and `SKIKP` are independent phases. The published SKP table mixes them; callers needing the earliest of the two should compare the available results rather than interpolate between phases.
+- P/S distance grids use 0.1° spacing below 2° and 1° spacing elsewhere. See [data provenance](resource/data/README.md) for corrections, supplements, and reproduction instructions.
+- Source depths are limited to 0–700 km. Distance coverage depends on the phase. Near a shadow or phase boundary, interpolation may return `nil` when adjacent cells are unavailable.
+- The package does not trace rays through a velocity model or return multiple arrivals for a single phase; it uses only the bundled AK135 grids.
 
 ## License
 

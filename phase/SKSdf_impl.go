@@ -32,9 +32,6 @@ func NewSKSdf(sksdfData string) (*SKSdf_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TauP's computed SKIKS branch begins just beyond 105 degrees for these
-	// depths, despite the rounded published table containing 105-degree cells.
-	removeEntries(mapObj, 105, 200, 300, 500, 700)
 
 	return &SKSdf_Impl{sksdfMap: mapObj}, nil
 }

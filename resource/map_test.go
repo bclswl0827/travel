@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"math"
 	"testing"
 	"time"
 )
@@ -11,6 +12,25 @@ func testEntry(delta, depth, seconds, slowness float64) TravelTimeEntry {
 		Depth:    depth,
 		Duration: time.Duration(seconds * float64(time.Second)),
 		Slowness: slowness,
+	}
+}
+
+func TestBoundaryIgnoresRowsWithoutArrivals(t *testing.T) {
+	m := TravelTimeMap{
+		0: {},
+		1: {10: testEntry(1, 10, 5, 1)},
+		2: {20: testEntry(2, 20, 10, 1)},
+		3: {},
+	}
+	minDelta, maxDelta, minDepth, maxDepth := m.Boundary()
+	if minDelta != 1 || maxDelta != 2 || minDepth != 10 || maxDepth != 20 {
+		t.Fatalf("boundary = (%g, %g, %g, %g), want (1, 2, 10, 20)", minDelta, maxDelta, minDepth, maxDepth)
+	}
+	for _, empty := range []TravelTimeMap{nil, {}, {0: {}}} {
+		minDelta, maxDelta, minDepth, maxDepth := empty.Boundary()
+		if !math.IsNaN(minDelta) || !math.IsNaN(maxDelta) || !math.IsNaN(minDepth) || !math.IsNaN(maxDepth) {
+			t.Fatalf("empty table boundary = (%g, %g, %g, %g), want NaN", minDelta, maxDelta, minDepth, maxDepth)
+		}
 	}
 }
 

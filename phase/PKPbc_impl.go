@@ -32,9 +32,6 @@ func NewPKPbc(pkpbcData string) (*PKPbc_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TauP's AK135 comparison identifies these published cells as a second
-	// PKP arrival that does not exist in the generated model.
-	removeEntries(mapObj, 155, 500, 700)
 
 	return &PKPbc_Impl{pkpbcMap: mapObj}, nil
 }

@@ -30,6 +30,9 @@ func (m TravelTimeMap) Boundary() (minDelta, maxDelta, minDepth, maxDepth float6
 	maxDelta = math.Inf(-1)
 
 	for delta, deltaMap := range m {
+		if len(deltaMap) == 0 {
+			continue
+		}
 		if delta < minDelta {
 			minDelta = delta
 		}
@@ -47,6 +50,9 @@ func (m TravelTimeMap) Boundary() (minDelta, maxDelta, minDepth, maxDepth float6
 		}
 	}
 
+	if math.IsInf(minDelta, 1) {
+		return math.NaN(), math.NaN(), math.NaN(), math.NaN()
+	}
 	return minDelta, maxDelta, minDepth, maxDepth
 }
 

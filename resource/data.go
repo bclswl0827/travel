@@ -31,6 +31,7 @@ const (
 	AK135_SKSac ak135TableId = "ak135_SKSac.txt"
 	AK135_SKSdf ak135TableId = "ak135_SKSdf.txt"
 	AK135_SKP   ak135TableId = "ak135_SKP.txt"
+	AK135_SKIKP ak135TableId = "ak135_SKIKP.txt"
 	AK135_SKS                = AK135_SKSac
 	AK135_SKIKS              = AK135_SKSdf
 )

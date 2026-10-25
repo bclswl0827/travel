@@ -32,9 +32,6 @@ func NewSKSac(sksacData string) (*SKSac_Impl, error) {
 	if err != nil {
 		return nil, err
 	}
-	// TauP identifies the published 144-degree values at these depths as
-	// duplicated 143-degree values rather than valid arrivals.
-	removeEntries(mapObj, 144, 500, 700)
 
 	return &SKSac_Impl{sksacMap: mapObj}, nil
 }
